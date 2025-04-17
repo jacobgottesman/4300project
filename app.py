@@ -42,7 +42,7 @@ def create_streamlit_app(client, bucket):
 
     # Header
     st.title("4300 Final Project Grading Tool")
-    st.markdown("By Jacob Gottesman and Marcos Esquiza Gasco")
+    st.markdown("By Jacob Gottesman and Marcos Equiza Gasco")
 
     # Sidebar
     with st.sidebar:
@@ -54,8 +54,10 @@ def create_streamlit_app(client, bucket):
     # load grade entry ool if selected
     if page == "Grade Entry Tool":
         input_tool(client, bucket)
-    
 
+    elif page == "Grade Viewer":
+        grade_viewer(client, bucket)
+    
 
 
 def input_tool(client, bucket):
@@ -93,8 +95,30 @@ def input_tool(client, bucket):
             to_db = {'name': name, 'assignment': assignment, 
                     'max_points': assignment_max_points, 'points': score}
             
-            upload_dict_as_json_to_s3(client, to_db, bucket, f'{name.replace(' ', '_')}_{assignment.replace(' ', '_')}.json')
+            upload_dict_as_json_to_s3(client, to_db, bucket, f'{name.replace(" ", "_")}_{assignment.replace(" ", "_")}.json')
 
+
+def grade_viewer(client, bucket):
+    try:
+        response = client.get_object(Bucket=bucket, Key='results/grades_summary.csv')
+        df = pd.read_csv(response['Body'])
+    except Exception as e:
+        st.error(f"Failed to fetch or parse grades_summary.csv: {e}")
+        return
+
+    if df.empty:
+        st.warning("No data available.")
+        return
+
+    student_names = df['name'].tolist()
+    selected_student = st.selectbox("Select a student to view grades", student_names)
+
+    if selected_student:
+        student_row = df[df['name'] == selected_student].T.reset_index()
+        student_row.columns = ['Category', 'Score']
+        student_row = student_row[1:]  
+        st.subheader(f"Grades for {selected_student}")
+        st.dataframe(student_row.set_index("Category"))
 
 
 def main():
