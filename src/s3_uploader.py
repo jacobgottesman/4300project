@@ -8,15 +8,7 @@ import time
 from pathlib import Path
 import boto3
 from dotenv import load_dotenv
-
-# The folder where source files live
-DATA_FOLDER = "data-news-articles"
-# How frequently to upload a file, in seconds
-UPLOAD_INTERVAL = 3
-# Total number of uploads to perform
-NUM_UPLOADS = 4
-# The name of the s3 bucket you're uploading to
-S3_BUCKET_NAME = "ds4300-fontenot-project-bucket"
+import io
 
 
 # Load the values from .env into dictionary
@@ -49,6 +41,22 @@ def upload_to_s3(s3_client, file_path, bucket_name):
     except Exception as e:
         print(f"Error uploading {file_path.name}: {str(e)}")
 
+def upload_dict_as_json_to_s3(s3_client, data_dict, bucket_name, filename):
+    try:
+        # Convert dict to JSON and encode to bytes
+        json_bytes = json.dumps(data_dict, indent=2).encode('utf-8')
+        file_obj = io.BytesIO(json_bytes)
+
+        # Upload to S3
+        s3_client.upload_fileobj(
+            file_obj,
+            bucket_name,
+            f"uploads/{filename}"
+        )
+
+        print(f"Successfully uploaded {filename} to S3")
+    except Exception as e:
+        print(f"Error uploading {filename}: {str(e)}")
 
 def main():
     # Load AWS credentials from .env
