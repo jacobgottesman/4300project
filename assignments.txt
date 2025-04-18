@@ -4,3 +4,5 @@ Quiz 1
 Midterm
 Final
 Other
+Quiz 2
+final project
